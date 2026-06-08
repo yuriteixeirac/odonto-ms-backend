@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 
+from apps.accounts.enums import Cargo
+
 
 class UsuarioManager(BaseUserManager):
     def create_user(self, email, password, **extra_fields):
@@ -27,13 +29,6 @@ class UsuarioManager(BaseUserManager):
 
 
 class Usuario(AbstractBaseUser):
-    class Cargo(models.TextChoices):
-        ADMIN = "admin"
-        OWNER = "owner"
-        CLINICO = "clínico"
-        FINANCEIRO = "financeiro"
-        ATENDENTE = "atendente"
-
     objects = UsuarioManager()
 
     email = models.EmailField(unique=True)
@@ -41,7 +36,9 @@ class Usuario(AbstractBaseUser):
 
     nome = models.CharField(max_length=128)
     sobrenome = models.CharField(max_length=128)
-    cargo = models.CharField(max_length=10, choices=Cargo.choices)
+    cargo = models.CharField(max_length=13, choices=Cargo.choices)
+
+    clinica = models.ForeignKey("Clinica", on_delete=models.CASCADE)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["nome", "sobrenome", "cargo"]

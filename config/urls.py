@@ -1,3 +1,3 @@
 from django.urls import include, path
 
-urlpatterns = [path("accounts/", include("apps.accounts.urls"))]
+urlpatterns = [path("api/auth/", include("apps.accounts.urls"))]

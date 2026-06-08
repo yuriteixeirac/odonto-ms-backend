@@ -100,3 +100,5 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
     "SIGNING_KEY": SECRET_KEY,
 }
+
+AUTH_USER_MODEL = "accounts.Usuario"
