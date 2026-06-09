@@ -10,8 +10,12 @@ from rest_framework.decorators import (
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from apps.accounts.helpers import api_response
-from apps.accounts.permissions import IsClinicAdmin
-from apps.accounts.serializers import ConviteSerializer
+from apps.accounts.serializers import (
+    ConviteSerializer,
+    UsuarioInputSerializer,
+    UsuarioOutputSerializer,
+)
+from apps.common.permissions import IsClinicAdmin
 from apps.common.redis import redis_cli
 
 CONVITE_TTL_SECONDS = 60 * 60 * 12  # 12 horas
@@ -58,6 +62,38 @@ def criar_convite_view(request):
     )
 
 
-# @api_view(["POST"])
-# def usar_convite_view(request, convite_uuid: str):
-#     convite = redis_cli.get(f"convite:{convite_uuid}")
+@api_view(["POST"])
+def usar_convite_view(request, convite_uuid: str):
+    key = f"convite:{convite_uuid}"
+    convite = redis_cli.get(key)
+
+    if not convite:
+        return api_response(
+            success=False,
+            message="Falha ao consultar convite.",
+            errors={"erro": "Convite expirou ou não existe"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    serializer = UsuarioInputSerializer(data=request.data)
+
+    if not serializer.is_valid():
+        return api_response(
+            success=False,
+            message="Falha ao serializar dados de entrada.",
+            errors=serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    convite_data = json.loads(convite)  # type: ignore
+    usuario = serializer.save(
+        cargo=convite_data.get("cargo"), clinica_id=convite_data.get("clinica_id")
+    )
+
+    redis_cli.delete(key)
+
+    return api_response(
+        success=True,
+        status=status.HTTP_201_CREATED,
+        data=UsuarioOutputSerializer(usuario).data,  # type: ignore
+    )
