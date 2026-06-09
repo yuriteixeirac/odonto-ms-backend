@@ -3,7 +3,7 @@ from typing import override
 from rest_framework import serializers
 
 from apps.accounts.models.clinica import Clinica
-from apps.accounts.validators import PhoneValidator
+from apps.accounts.validators import validate_phone
 
 
 class ClinicaOutputSerializer(serializers.ModelSerializer):
@@ -15,7 +15,7 @@ class ClinicaOutputSerializer(serializers.ModelSerializer):
 class ClinicaInputSerializer(serializers.Serializer):
     nome = serializers.CharField(max_length=128)
     email = serializers.EmailField()
-    telefone = serializers.CharField(max_length=13, validators=[PhoneValidator()])
+    telefone = serializers.CharField(max_length=13, validators=[validate_phone])
     cep = serializers.CharField(max_length=9)
 
     @override

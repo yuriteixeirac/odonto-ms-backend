@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 
 from apps.accounts.enums import Cargo
-from apps.accounts.validators import PhoneValidator
+from apps.accounts.validators import validate_phone
 
 
 class UsuarioManager(BaseUserManager):
@@ -36,7 +36,7 @@ class Usuario(AbstractBaseUser):
 
     email = models.EmailField(unique=True)
     telefone = models.CharField(
-        max_length=13, unique=True, null=True, validators=[PhoneValidator()]
+        max_length=13, unique=True, null=True, validators=[validate_phone]
     )
 
     nome = models.CharField(max_length=128)

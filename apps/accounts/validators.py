@@ -2,10 +2,9 @@ import re
 
 from django.core.exceptions import ValidationError
 
+phone_pattern = re.compile(r"(\+?\d{2})?\s?\d{2}\s?9?\s?\d{4}[\-\s]?\d{4}")
 
-class PhoneValidator:
-    pattern = re.compile(r"(\+?\d{2})?\s?\d{2}\s?9?\s?\d{4}[\-\s]?\d{4}")
 
-    def __call__(self, phone: str) -> None:
-        if self.pattern.fullmatch(phone) is None:
-            raise ValidationError("Telefone não entra no padrão esperado.")
+def validate_phone(phone: str) -> None:
+    if phone_pattern.fullmatch(phone.strip()) is None:
+        raise ValidationError("Telefone não entra no padrão esperado.")
