@@ -4,10 +4,10 @@ from django.db import models
 class Procedimento(models.Model):
     nome = models.CharField(max_length=255)
     duracao = models.IntegerField()  # em minutos
-    valor = models.DecimalField()
+    valor = models.DecimalField(max_digits=7, decimal_places=2)
     ativo = models.BooleanField(default=True)  # type: ignore
 
-    clinica = models.ForeignKey("Clinica", on_delete=models.CASCADE)
+    clinica = models.ForeignKey("accounts.Clinica", on_delete=models.CASCADE)
 
     class Meta:
         constraints = [

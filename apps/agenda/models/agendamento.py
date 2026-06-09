@@ -18,6 +18,3 @@ class Agendamento(models.Model):
     clinico = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
 
     criado_em = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("clinico", "dia", "ativo")
