@@ -9,7 +9,7 @@ from apps.accounts.validators import validate_phone
 class UsuarioInputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ["email", "password", "nome", "sobrenome"]
+        fields = ["email", "password", "nome", "sobrenome", "telefone"]
 
     telefone = serializers.CharField(max_length=13, validators=[validate_phone])
 

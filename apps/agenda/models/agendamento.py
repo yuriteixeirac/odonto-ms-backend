@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.agenda.enums import Dia, Status
+from apps.agenda.enums import Status
 from config import settings
 
 
