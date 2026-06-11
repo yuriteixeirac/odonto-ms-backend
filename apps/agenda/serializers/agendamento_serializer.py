@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.accounts.serializers.usuario_serializers import UsuarioOutputSerializer
 from apps.agenda.models.agendamento import Agendamento
+from apps.agenda.serializers.procedimento_serializer import ProcedimentoSerializer
 
 
 class AgendamentoInputSerializer(serializers.ModelSerializer):
@@ -38,3 +39,6 @@ class AgendamentoOutputSerializer(serializers.ModelSerializer):
             "clinico",
             "criado_em",
         ]
+
+    clinico = UsuarioOutputSerializer()
+    procedimento = ProcedimentoSerializer()

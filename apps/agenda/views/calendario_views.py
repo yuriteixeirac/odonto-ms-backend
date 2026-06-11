@@ -1,5 +1,6 @@
 from calendar import monthrange
 from datetime import date, datetime
+from socket import MsgFlag
 
 from django.utils import timezone
 from rest_framework import status
@@ -13,6 +14,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from apps.accounts.helpers import api_response
 from apps.agenda.enums import Status
 from apps.agenda.models.agendamento import Agendamento
+from apps.agenda.serializers.agendamento_serializer import AgendamentoOutputSerializer
 from apps.agenda.serializers.calendario_mensal_serializer import (
     CalendarioMensalSerializer,
 )
@@ -102,3 +104,48 @@ def calendario_mensal_view(request):
         )
 
     return api_response(success=True, data=serializer.data, status=status.HTTP_200_OK)  # type: ignore
+
+
+@api_view(["GET"])
+@permission_classes([IsClinico])
+@authentication_classes([JWTAuthentication])
+def calendario_diario_view(request):
+    dia_param = request.query_params.get("dia")
+    mes_param = request.query_params.get("mes")
+    ano_param = request.query_params.get("ano")
+
+    if not dia_param or not mes_param or not ano_param:
+        return api_response(
+            success=False,
+            message="Falha ao serializar dados de entrada.",
+            errors={"Ano, mês ou dia não podem ser vazios."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        dia = int(dia_param)
+        mes = int(mes_param)
+        ano = int(ano_param)
+    except ValueError:
+        return api_response(
+            success=False,
+            message="Falha ao serializar dados de entrada.",
+            errors={"erro": "Ano, mês ou dia devem ser números inteiros."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    inicio_dia = timezone.make_aware(
+        datetime(day=dia, month=mes, year=ano, hour=0, minute=0)
+    )
+
+    fim_dia = inicio_dia + timezone.timedelta(days=1)
+
+    agendamentos = Agendamento.objects.filter(
+        inicio__gte=inicio_dia, inicio__lt=fim_dia, clinico=request.user
+    )
+
+    return api_response(
+        success=True,
+        status=status.HTTP_200_OK,
+        data=AgendamentoOutputSerializer(agendamentos, many=True).data,
+    )
