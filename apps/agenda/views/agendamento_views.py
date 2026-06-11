@@ -20,7 +20,7 @@ class AgendamentoViewSet(ModelViewSet):
     queryset = Agendamento.objects.all()  # type: ignore
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsClinico, IsRecepcionista]
+    permission_classes = [IsRecepcionista]
 
     @override
     def create(self, request, *args, **kwargs):

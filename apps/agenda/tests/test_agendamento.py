@@ -95,7 +95,7 @@ class AgendamentoTest(APITestCase):
         return payload
 
     def test_criar_agendamento(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         response = self.client.post(
             reverse("agendamento-list"),
@@ -113,7 +113,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(agendamento.fim, agendamento.inicio + timedelta(minutes=90))
 
     def test_nao_cria_agendamento_no_passado(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         inicio_passado = timezone.now() - timedelta(days=1)
 
@@ -127,7 +127,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_clinico_inexistente(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         response = self.client.post(
             reverse("agendamento-list"),
@@ -139,7 +139,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_usuario_que_nao_e_clinico(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         response = self.client.post(
             reverse("agendamento-list"),
@@ -151,7 +151,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_procedimento_inativo(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         self.procedimento.ativo = False  # type: ignore
         self.procedimento.save()
@@ -166,7 +166,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_sem_expediente_no_dia(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         Expediente.objects.filter(clinico=self.clinico).delete()  # type: ignore
 
@@ -180,7 +180,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_overlap(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         inicio = self._inicio_valido()
 
@@ -202,7 +202,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(Agendamento.objects.count(), 1)  # type: ignore
 
     def test_agendamento_cancelado_nao_bloqueia_horario(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         inicio = self._inicio_valido()
 
@@ -224,7 +224,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(Agendamento.objects.count(), 2)  # type: ignore
 
     def test_nao_cria_agendamento_fora_do_horario_do_expediente(self):
-        self.client.force_authenticate(user=self.admin)  # type: ignore
+        self.client.force_authenticate(user=self.recepcionista)  # type: ignore
 
         inicio_fora = self._inicio_valido().replace(hour=19, minute=0)
 

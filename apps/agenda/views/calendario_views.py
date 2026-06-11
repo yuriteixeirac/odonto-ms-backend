@@ -1,6 +1,7 @@
 from calendar import monthrange
-from datetime import date
+from datetime import date, datetime
 
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import (
     api_view,
@@ -22,10 +23,10 @@ from apps.common.permissions import IsClinico
 @permission_classes([IsClinico])
 @authentication_classes([JWTAuthentication])
 def calendario_mensal_view(request):
-    ano = request.query_params.get("ano")
-    mes = request.query_params.get("mes")
+    ano_param = request.query_params.get("ano")
+    mes_param = request.query_params.get("mes")
 
-    if not (ano and mes):
+    if not (ano_param and mes_param):
         return api_response(
             success=False,
             message="Falha ao associar valores de entrada.",
@@ -33,16 +34,46 @@ def calendario_mensal_view(request):
             status=400,
         )
 
-    ano = int(ano)
-    mes = int(mes)
+    try:
+        ano = int(ano_param)
+        mes = int(mes_param)
+    except ValueError:
+        return api_response(
+            success=False,
+            message="Falha ao associar valores de entrada.",
+            errors={"erro": "Ano ou mês inválidos."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if mes not in list(range(1, 12 + 1)):
+        return api_response(
+            success=False,
+            message="Falha ao serializar dados de entrada.",
+            errors={"erro": f"Mês {mes} deve estar entre 1 e 12."},
+            status=400,
+        )
+
+    inicio_mes = timezone.make_aware(datetime(ano, mes, 1))
+    fim_mes = (
+        timezone.make_aware(datetime(ano + 1, 1, 1))
+        if mes == 12
+        else timezone.make_aware(datetime(ano, mes + 1, 1))
+    )
 
     agendamentos = Agendamento.objects.filter(
-        inicio__year=ano, inicio__month=mes, clinico=request.user
+        inicio__gte=inicio_mes, inicio__lt=fim_mes, clinico=request.user
     )
 
     datas = []
     for dia in range(1, monthrange(ano, mes)[1] + 1):
-        agendamentos_dia = agendamentos.filter(inicio__day=dia)
+        inicio_dia = timezone.make_aware(datetime(ano, mes, dia))
+        fim_dia = inicio_dia + timezone.timedelta(days=1)
+
+        agendamentos_dia = agendamentos.filter(
+            inicio__gte=inicio_dia,
+            inicio__lt=fim_dia,
+        )
+
         contagem_por_status = {}
 
         for agendamento_status in Status.values:
