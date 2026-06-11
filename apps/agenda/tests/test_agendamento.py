@@ -21,7 +21,7 @@ class AgendamentoTest(APITestCase):
     procedimento: Procedimento
 
     def setUp(self) -> None:
-        self.clinica = Clinica.objects.create(
+        self.clinica = Clinica.objects.create(  # type: ignore
             nome="Clínica dos Testes",
             email="clinica@test.com",
             telefone="84999999999",
@@ -54,21 +54,21 @@ class AgendamentoTest(APITestCase):
             sobrenome="Teste",
             telefone="84999999992",
             password="test123",
-            cargo=Cargo.RECEPCAO,
+            cargo=Cargo.RECEPCIONISTA,
             clinica=self.clinica,
         )
 
         inicio, fim = time.fromisoformat("10:00:00"), time.fromisoformat("18:00:00")
 
         for dia in Dia.values:
-            Expediente.objects.create(
+            Expediente.objects.create(  # type: ignore
                 dia=dia,
                 inicio=inicio,
                 fim=fim,
                 clinico=self.clinico,
             )
 
-        self.procedimento = Procedimento.objects.create(
+        self.procedimento = Procedimento.objects.create(  # type: ignore
             nome="Canal",
             duracao=90,
             valor=120.0,
@@ -87,15 +87,15 @@ class AgendamentoTest(APITestCase):
     def _payload(self, **overrides):
         payload = {
             "inicio": self._inicio_valido().isoformat(),
-            "procedimento": self.procedimento.id,
-            "clinico": self.clinico.id,
+            "procedimento": self.procedimento.id,  # type: ignore
+            "clinico": self.clinico.id,  # type: ignore
         }
 
         payload.update(overrides)
         return payload
 
     def test_criar_agendamento(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
         response = self.client.post(
             reverse("agendamento-list"),
@@ -103,9 +103,9 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.status_code, 201, response.data)  # type: ignore
 
-        agendamento = Agendamento.objects.first()
+        agendamento = Agendamento.objects.first()  # type: ignore
 
         self.assertIsNotNone(agendamento)
         self.assertEqual(agendamento.clinico, self.clinico)
@@ -113,7 +113,7 @@ class AgendamentoTest(APITestCase):
         self.assertEqual(agendamento.fim, agendamento.inicio + timedelta(minutes=90))
 
     def test_nao_cria_agendamento_no_passado(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
         inicio_passado = timezone.now() - timedelta(days=1)
 
@@ -123,11 +123,11 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(Agendamento.objects.count(), 0)
+        self.assertEqual(response.status_code, 400)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_clinico_inexistente(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
         response = self.client.post(
             reverse("agendamento-list"),
@@ -135,25 +135,25 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(Agendamento.objects.count(), 0)
+        self.assertEqual(response.status_code, 400)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_usuario_que_nao_e_clinico(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
         response = self.client.post(
             reverse("agendamento-list"),
-            data=self._payload(clinico=self.recepcionista.id),
+            data=self._payload(clinico=self.recepcionista.id),  # type: ignore
             format="json",
         )
 
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(Agendamento.objects.count(), 0)
+        self.assertEqual(response.status_code, 404)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_procedimento_inativo(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
-        self.procedimento.ativo = False
+        self.procedimento.ativo = False  # type: ignore
         self.procedimento.save()
 
         response = self.client.post(
@@ -162,13 +162,13 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(Agendamento.objects.count(), 0)
+        self.assertEqual(response.status_code, 404)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_sem_expediente_no_dia(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
-        Expediente.objects.filter(clinico=self.clinico).delete()
+        Expediente.objects.filter(clinico=self.clinico).delete()  # type: ignore
 
         response = self.client.post(
             reverse("agendamento-list"),
@@ -176,15 +176,15 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(Agendamento.objects.count(), 0)
+        self.assertEqual(response.status_code, 404)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore
 
     def test_nao_cria_agendamento_com_overlap(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
         inicio = self._inicio_valido()
 
-        Agendamento.objects.create(
+        Agendamento.objects.create(  # type: ignore
             inicio=inicio,
             fim=inicio + timedelta(minutes=90),
             clinico=self.clinico,
@@ -198,15 +198,15 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(Agendamento.objects.count(), 1)
+        self.assertEqual(response.status_code, 400)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 1)  # type: ignore
 
     def test_agendamento_cancelado_nao_bloqueia_horario(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
         inicio = self._inicio_valido()
 
-        Agendamento.objects.create(
+        Agendamento.objects.create(  # type: ignore
             inicio=inicio,
             fim=inicio + timedelta(minutes=90),
             clinico=self.clinico,
@@ -220,11 +220,11 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 201, response.data)
-        self.assertEqual(Agendamento.objects.count(), 2)
+        self.assertEqual(response.status_code, 201, response.data)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 2)  # type: ignore
 
     def test_nao_cria_agendamento_fora_do_horario_do_expediente(self):
-        self.client.force_authenticate(user=self.admin)
+        self.client.force_authenticate(user=self.admin)  # type: ignore
 
         inicio_fora = self._inicio_valido().replace(hour=19, minute=0)
 
@@ -234,5 +234,5 @@ class AgendamentoTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(Agendamento.objects.count(), 0)
+        self.assertEqual(response.status_code, 400)  # type: ignore
+        self.assertEqual(Agendamento.objects.count(), 0)  # type: ignore

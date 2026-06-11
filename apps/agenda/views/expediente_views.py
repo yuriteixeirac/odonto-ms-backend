@@ -12,7 +12,7 @@ from apps.agenda.serializers.expediente_serializer import (
 
 
 class ExpedienteViewSet(ModelViewSet):
-    queryset = Expediente.objects.all()
+    queryset = Expediente.objects.all()  # type: ignore
     serializer_class = ExpedienteOutputSerializer
 
     @override
@@ -29,5 +29,7 @@ class ExpedienteViewSet(ModelViewSet):
         serializer.save()
 
         return api_response(
-            success=True, data=serializer.data, status=status.HTTP_201_CREATED
+            success=True,
+            data=serializer.data,  # type: ignore
+            status=status.HTTP_201_CREATED,
         )

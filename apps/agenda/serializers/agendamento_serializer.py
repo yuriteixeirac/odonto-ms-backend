@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import override
 
 from django.utils import timezone
@@ -7,7 +6,6 @@ from rest_framework.exceptions import ValidationError
 
 from apps.accounts.serializers.usuario_serializers import UsuarioOutputSerializer
 from apps.agenda.models.agendamento import Agendamento
-from apps.agenda.serializers.procedimento_serializer import ProcedimentoSerializer
 
 
 class AgendamentoInputSerializer(serializers.ModelSerializer):

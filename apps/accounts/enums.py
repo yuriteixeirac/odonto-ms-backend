@@ -3,6 +3,6 @@ from django.db import models
 
 class Cargo(models.TextChoices):
     ADMIN = "administrador"
-    RECEPCAO = "recepção"
+    RECEPCIONISTA = "recepcionista"
     CLINICO = "clínico"
     AUXILIAR = "auxiliar"

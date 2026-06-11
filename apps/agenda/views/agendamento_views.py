@@ -3,6 +3,7 @@ from typing import override
 
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from apps.accounts.enums import Cargo
 from apps.accounts.helpers import api_response
@@ -11,11 +12,15 @@ from apps.agenda.models.agendamento import Agendamento
 from apps.agenda.models.expediente import Expediente
 from apps.agenda.serializers import AgendamentoInputSerializer
 from apps.agenda.serializers.agendamento_serializer import AgendamentoOutputSerializer
+from apps.common.permissions import IsClinico, IsRecepcionista
 
 
 class AgendamentoViewSet(ModelViewSet):
     serializer_class = AgendamentoInputSerializer
     queryset = Agendamento.objects.all()  # type: ignore
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsClinico, IsRecepcionista]
 
     @override
     def create(self, request, *args, **kwargs):
@@ -39,7 +44,7 @@ class AgendamentoViewSet(ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        procedimento = serializer.validated_data["procedimento"]
+        procedimento = serializer.validated_data["procedimento"]  # type: ignore
 
         if not procedimento.ativo:
             return api_response(
@@ -82,7 +87,7 @@ class AgendamentoViewSet(ModelViewSet):
             )
 
         expediente_overlap = (
-            Expediente.objects.filter(
+            Expediente.objects.filter(  # type: ignore
                 dia=dia, inicio__lte=inicio.time(), fim__gt=fim.time(), clinico=clinico
             )
             .exclude(ativo=False)

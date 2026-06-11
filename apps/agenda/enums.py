@@ -15,4 +15,4 @@ class Status(models.TextChoices):
     PENDENTE = "pendente"
     AGENDADO = "agendado"
     CANCELADO = "cancelado"
-    CONCLUIDO = "concluído"
+    CONCLUIDO = "concluido"

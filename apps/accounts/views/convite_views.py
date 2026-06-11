@@ -15,14 +15,14 @@ from apps.accounts.serializers import (
     UsuarioInputSerializer,
     UsuarioOutputSerializer,
 )
-from apps.common.permissions import IsClinicAdmin
+from apps.common.permissions import IsClinicaAdmin
 from apps.common.redis import redis_cli
 
 CONVITE_TTL_SECONDS = 60 * 60 * 12  # 12 horas
 
 
 @api_view(["POST"])
-@permission_classes([IsClinicAdmin])
+@permission_classes([IsClinicaAdmin])
 @authentication_classes([JWTAuthentication])
 def criar_convite_view(request):
     serializer = ConviteSerializer(data=request.data)

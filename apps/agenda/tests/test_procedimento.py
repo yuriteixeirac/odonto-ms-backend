@@ -12,7 +12,7 @@ class ProcedimentoTest(APITestCase):
     clinica = None
 
     def setUp(self) -> None:
-        self.clinica = Clinica.objects.create(
+        self.clinica = Clinica.objects.create(  # type: ignore
             nome="Clínica dos Bobos",
             telefone="76767676767",
             email="clinica@teste.com",
