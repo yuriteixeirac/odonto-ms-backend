@@ -4,4 +4,5 @@ from apps.agenda.views.calendario_views import (
     calendario_mensal_view,
 )
 from apps.agenda.views.expediente_views import ExpedienteViewSet
+from apps.agenda.views.paciente_views import PacienteViewSet
 from apps.agenda.views.procedimento_views import ProcedimentoViewSet
