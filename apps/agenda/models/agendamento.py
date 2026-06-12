@@ -16,5 +16,6 @@ class Agendamento(models.Model):
 
     procedimento = models.ForeignKey("Procedimento", on_delete=models.PROTECT)
     clinico = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    paciente = models.ForeignKey("Paciente", on_delete=models.PROTECT)
 
     criado_em = models.DateTimeField(auto_now_add=True)
