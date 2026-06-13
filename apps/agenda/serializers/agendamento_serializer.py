@@ -18,6 +18,7 @@ class AgendamentoInputSerializer(serializers.ModelSerializer):
             "observacoes",
             "procedimento",
             "clinico",
+            "paciente",
         ]
 
     @override
@@ -37,6 +38,7 @@ class AgendamentoOutputSerializer(serializers.ModelSerializer):
             "observacoes",
             "procedimento",
             "clinico",
+            "paciente",
             "criado_em",
         ]
 

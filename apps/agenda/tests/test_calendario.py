@@ -9,12 +9,14 @@ from apps.accounts.models.clinica import Clinica
 from apps.accounts.models.usuario import Usuario
 from apps.agenda.enums import Status
 from apps.agenda.models.agendamento import Agendamento
+from apps.agenda.models.paciente import Paciente
 from apps.agenda.models.procedimento import Procedimento
 
 
 class CalendarioTest(APITestCase):
     clinica = None
     clinico = None
+    paciente = None
 
     def setUp(self) -> None:
         self.clinica = Clinica.objects.create(
@@ -32,6 +34,15 @@ class CalendarioTest(APITestCase):
             password="teste123",
             clinica=self.clinica,
             cargo=Cargo.CLINICO,
+        )
+
+        self.paciente = Paciente.objects.create(
+            nome="Yuri",
+            sobrenome="Teixeira",
+            cpf="73261292741",
+            telefone="5599999999999",
+            email="yuri@gmail.com",
+            clinica=self.clinica,
         )
 
     def test_mes_e_ano_vazios(self):
@@ -77,6 +88,7 @@ class CalendarioTest(APITestCase):
             clinico=self.clinico,
             procedimento=procedimento,
             status=Status.PENDENTE,
+            paciente=self.paciente,
         )
 
         Agendamento.objects.create(
@@ -85,6 +97,7 @@ class CalendarioTest(APITestCase):
             clinico=self.clinico,
             procedimento=procedimento,
             status=Status.AGENDADO,
+            paciente=self.paciente,
         )
 
         response = self._get_calendario(ano=2026, mes=6)

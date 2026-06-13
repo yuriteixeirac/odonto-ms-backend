@@ -28,3 +28,13 @@ class IsRecepcionista(BasePermission):
             and request.user.is_authenticated
             and request.user.cargo == Cargo.RECEPCIONISTA
         )
+
+
+class IsRecepcionistaOuAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.cargo == Cargo.RECEPCIONISTA
+            or request.user.cargo == Cargo.ADMIN
+        )

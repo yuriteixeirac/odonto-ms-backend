@@ -3,9 +3,9 @@ from typing import override
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 
-from apps.accounts.helpers import api_response
 from apps.agenda.models.procedimento import Procedimento
 from apps.agenda.serializers.procedimento_serializer import ProcedimentoSerializer
+from apps.common.helpers import api_response
 
 
 class ProcedimentoViewSet(ModelViewSet):

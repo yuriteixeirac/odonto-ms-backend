@@ -6,13 +6,14 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from apps.accounts.enums import Cargo
-from apps.accounts.helpers import api_response
 from apps.agenda.enums import Status
 from apps.agenda.models.agendamento import Agendamento
 from apps.agenda.models.expediente import Expediente
 from apps.agenda.serializers import AgendamentoInputSerializer
 from apps.agenda.serializers.agendamento_serializer import AgendamentoOutputSerializer
-from apps.common.permissions import IsClinico, IsRecepcionista
+from apps.common import publisher
+from apps.common.helpers import api_response
+from apps.common.permissions import IsRecepcionista
 
 
 class AgendamentoViewSet(ModelViewSet):
@@ -25,6 +26,7 @@ class AgendamentoViewSet(ModelViewSet):
     @override
     def create(self, request, *args, **kwargs):
         serializer = AgendamentoInputSerializer(data=request.data)
+
         if not serializer.is_valid():
             return api_response(
                 success=False,
@@ -109,6 +111,8 @@ class AgendamentoViewSet(ModelViewSet):
             fim=fim,
         )
         agendamento.save()
+
+        publisher.publish_lembrete(agendamento_id=agendamento.id)  # type: ignore
 
         return api_response(
             success=True,

@@ -4,11 +4,14 @@ from rest_framework import status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import ModelViewSet
 
-from apps.accounts.helpers import api_response
 from apps.accounts.models.clinica import Clinica
 from apps.accounts.serializers import ClinicaOutputSerializer
 from apps.accounts.serializers.clinica_serializers import ClinicaInputSerializer
 from apps.accounts.services import CEPService
+from apps.common.helpers import api_response
+from apps.notificacoes.exceptions import InstanciaWhatsAppJaExiste
+from apps.notificacoes.models import WhatsAppInstance
+from apps.notificacoes.service import WhatsappService
 
 
 class ClinicaViewSet(ModelViewSet):
@@ -33,8 +36,19 @@ class ClinicaViewSet(ModelViewSet):
 
         clinica = serializer.save(endereco=endereco)
 
+        wpp_service = WhatsappService()
+        erros = {}
+
+        try:
+            wpp_service.criar_instancia(clinica)
+        except InstanciaWhatsAppJaExiste:
+            erros["erro"] = (
+                "Instância de WhatsApp com nome associado à clínica já existe."
+            )
+
         return api_response(
             success=True,
             status=status.HTTP_201_CREATED,
             data=ClinicaOutputSerializer(clinica).data,  # type: ignore
+            errors=erros,
         )

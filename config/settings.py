@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.accounts",
     "apps.agenda",
+    "apps.notificacoes",
 ]
 
 MIDDLEWARE = [

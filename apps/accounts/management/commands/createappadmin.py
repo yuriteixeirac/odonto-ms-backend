@@ -1,30 +1,22 @@
-from getpass import getpass
-
-from django.core.management import CommandError
 from django.core.management.base import BaseCommand
 
 from apps.accounts.enums import Cargo
 from apps.accounts.models import Clinica
 from apps.accounts.models.usuario import Usuario
 from apps.accounts.serializers.usuario_serializers import UsuarioInputSerializer
-from apps.accounts.services import CEPService
 
 
 class Command(BaseCommand):
-    help = "Cria ou consulta uma clínica e um usuário administrador associado a ela."
+    help = "Cria um superusuário para toda a aplicação."
 
     def add_arguments(self, parser):
-        parser.add_argument("--clinica-id", required=True)
-
         parser.add_argument("--email", required=True)
         parser.add_argument("--nome", required=True)
         parser.add_argument("--sobrenome", required=True)
         parser.add_argument("--telefone", required=True)
 
     def handle(self, *args, **options):
-        clinica = Clinica.objects.get(pk=options["clinica_id"])
-
-        password = getpass("Senha do administrador: ")
+        password = input("Senha: ")
 
         serializer = UsuarioInputSerializer(
             data={
@@ -37,14 +29,11 @@ class Command(BaseCommand):
         )
 
         if not serializer.is_valid():
-            raise CommandError(
-                f"Falha na serialização dos dados de entrada: {serializer.errors}"
+            self.stderr.write(
+                msg=f"Falha na serialização dos dados de entrada: {serializer.errors}"
             )
+            return
 
-        usuario = Usuario.objects.create_user(
-            **serializer.validated_data,  # type: ignore
-            clinica=clinica,
-            cargo=Cargo.ADMIN,
-        )
+        usuario = Usuario.objects.create_superuser(**serializer.validated_data)  # type: ignore
 
-        self.stdout.write(f"Admin de clínica criado: {usuario.email}")
+        self.stdout.write(f"Superusuário criado: {usuario.email}")

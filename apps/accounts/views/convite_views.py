@@ -9,12 +9,12 @@ from rest_framework.decorators import (
 )
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.accounts.helpers import api_response
 from apps.accounts.serializers import (
     ConviteSerializer,
     UsuarioInputSerializer,
     UsuarioOutputSerializer,
 )
+from apps.common.helpers import api_response
 from apps.common.permissions import IsClinicaAdmin
 from apps.common.redis import redis_cli
 

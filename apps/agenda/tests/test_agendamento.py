@@ -5,12 +5,9 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from apps.accounts.enums import Cargo
-from apps.accounts.models.clinica import Clinica
-from apps.accounts.models.usuario import Usuario
+from apps.accounts.models import Clinica, Usuario
 from apps.agenda.enums import Dia, Status
-from apps.agenda.models.agendamento import Agendamento
-from apps.agenda.models.expediente import Expediente
-from apps.agenda.models.procedimento import Procedimento
+from apps.agenda.models import Agendamento, Expediente, Paciente, Procedimento
 
 
 class AgendamentoTest(APITestCase):
@@ -19,6 +16,7 @@ class AgendamentoTest(APITestCase):
     clinico: Usuario
     recepcionista: Usuario
     procedimento: Procedimento
+    paciente: Paciente
 
     def setUp(self) -> None:
         self.clinica = Clinica.objects.create(  # type: ignore
@@ -58,6 +56,15 @@ class AgendamentoTest(APITestCase):
             clinica=self.clinica,
         )
 
+        self.paciente = Paciente.objects.create(
+            nome="Yuri",
+            sobrenome="Teixeira",
+            cpf="73261292741",
+            telefone="5584987864075",
+            email="yuri@gmail.com",
+            clinica=self.clinica,
+        )
+
         inicio, fim = time.fromisoformat("10:00:00"), time.fromisoformat("18:00:00")
 
         for dia in Dia.values:
@@ -89,6 +96,7 @@ class AgendamentoTest(APITestCase):
             "inicio": self._inicio_valido().isoformat(),
             "procedimento": self.procedimento.id,  # type: ignore
             "clinico": self.clinico.id,  # type: ignore
+            "paciente": self.paciente.id,  # type: ignore
         }
 
         payload.update(overrides)
@@ -190,6 +198,7 @@ class AgendamentoTest(APITestCase):
             clinico=self.clinico,
             procedimento=self.procedimento,
             status=Status.AGENDADO,
+            paciente=self.paciente,
         )
 
         response = self.client.post(
@@ -212,6 +221,7 @@ class AgendamentoTest(APITestCase):
             clinico=self.clinico,
             procedimento=self.procedimento,
             status=Status.CANCELADO,
+            paciente=self.paciente,
         )
 
         response = self.client.post(

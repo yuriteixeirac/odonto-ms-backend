@@ -25,9 +25,6 @@ class UsuarioManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("cargo", Cargo.ADMIN)
 
-        if extra_fields.get("clinica") is None:
-            raise ValueError("Superusuário precisa estar associado a uma clínica.")
-
         return self.create_user(email, password, **extra_fields)
 
 
@@ -45,10 +42,12 @@ class Usuario(AbstractBaseUser):
         max_length=13, choices=Cargo.choices, default=Cargo.CLINICO
     )
 
-    clinica = models.ForeignKey("Clinica", on_delete=models.CASCADE)
+    clinica = models.ForeignKey(
+        "Clinica", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     is_staff = models.BooleanField(default=False)  # type: ignore
     is_superuser = models.BooleanField(default=False)  # type: ignore
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["nome", "sobrenome", "telefone", "cargo", "clinica"]
+    REQUIRED_FIELDS = ["nome", "sobrenome", "telefone", "cargo"]

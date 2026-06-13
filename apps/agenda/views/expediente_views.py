@@ -3,12 +3,12 @@ from typing import override
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 
-from apps.accounts.helpers import api_response
 from apps.agenda.models.expediente import Expediente
 from apps.agenda.serializers.expediente_serializer import (
     ExpedienteInputSerializer,
     ExpedienteOutputSerializer,
 )
+from apps.common.helpers import api_response
 
 
 class ExpedienteViewSet(ModelViewSet):

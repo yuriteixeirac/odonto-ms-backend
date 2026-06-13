@@ -23,3 +23,6 @@ class Procedimento(models.Model):
             "nome",
             "clinica",
         )
+
+    def __str__(self):
+        return self.nome

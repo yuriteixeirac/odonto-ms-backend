@@ -11,13 +11,13 @@ from rest_framework.decorators import (
 )
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.accounts.helpers import api_response
 from apps.agenda.enums import Status
 from apps.agenda.models.agendamento import Agendamento
 from apps.agenda.serializers.agendamento_serializer import AgendamentoOutputSerializer
 from apps.agenda.serializers.calendario_mensal_serializer import (
     CalendarioMensalSerializer,
 )
+from apps.common.helpers import api_response
 from apps.common.permissions import IsClinico
 
 
