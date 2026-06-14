@@ -30,11 +30,11 @@ class IsRecepcionista(BasePermission):
         )
 
 
-class IsRecepcionistaOuAdmin(BasePermission):
+class IsAppAdmin(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user
             and request.user.is_authenticated
-            and request.user.cargo == Cargo.RECEPCIONISTA
-            or request.user.cargo == Cargo.ADMIN
+            and request.user.clinica_id is None
+            and request.user.is_staff
         )

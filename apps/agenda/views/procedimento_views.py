@@ -2,15 +2,20 @@ from typing import override
 
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from apps.agenda.models.procedimento import Procedimento
 from apps.agenda.serializers.procedimento_serializer import ProcedimentoSerializer
 from apps.common.helpers import api_response
+from apps.common.permissions import IsClinicaAdmin, IsClinico, IsRecepcionista
 
 
 class ProcedimentoViewSet(ModelViewSet):
     serializer_class = ProcedimentoSerializer
     queryset = Procedimento.objects.all()  # type: ignore
+
+    permission_classes = [IsClinicaAdmin | IsClinico | IsRecepcionista]
+    authentication_classes = [JWTAuthentication]
 
     @override
     def create(self, request, *args, **kwargs):

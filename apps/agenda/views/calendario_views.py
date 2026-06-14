@@ -1,8 +1,8 @@
 from calendar import monthrange
 from datetime import date, datetime
-from socket import MsgFlag
 
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import (
     api_view,
@@ -21,6 +21,7 @@ from apps.common.helpers import api_response
 from apps.common.permissions import IsClinico
 
 
+@extend_schema(responses={200: CalendarioMensalSerializer, 400: None, 500: None})
 @api_view(["GET"])
 @permission_classes([IsClinico])
 @authentication_classes([JWTAuthentication])
@@ -106,6 +107,7 @@ def calendario_mensal_view(request):
     return api_response(success=True, data=serializer.data, status=status.HTTP_200_OK)  # type: ignore
 
 
+@extend_schema(responses={200: AgendamentoOutputSerializer(many=True), 400: None})
 @api_view(["GET"])
 @permission_classes([IsClinico])
 @authentication_classes([JWTAuthentication])
@@ -147,5 +149,5 @@ def calendario_diario_view(request):
     return api_response(
         success=True,
         status=status.HTTP_200_OK,
-        data=AgendamentoOutputSerializer(agendamentos, many=True).data,
+        data=AgendamentoOutputSerializer(agendamentos, many=True).data,  # type: ignore
     )

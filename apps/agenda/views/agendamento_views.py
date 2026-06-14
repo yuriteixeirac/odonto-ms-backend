@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import override
 
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -13,17 +14,37 @@ from apps.agenda.serializers import AgendamentoInputSerializer
 from apps.agenda.serializers.agendamento_serializer import AgendamentoOutputSerializer
 from apps.common import publisher
 from apps.common.helpers import api_response
-from apps.common.permissions import IsRecepcionista
+from apps.common.permissions import IsClinico, IsRecepcionista
 
 
+@extend_schema_view(
+    list=extend_schema(
+        responses=AgendamentoOutputSerializer(many=True),
+    ),
+    retrieve=extend_schema(
+        responses=AgendamentoOutputSerializer,
+    ),
+    create=extend_schema(
+        request=AgendamentoInputSerializer,
+        responses={201: AgendamentoOutputSerializer, 400: None, 404: None},
+    ),
+    update=extend_schema(
+        request=AgendamentoInputSerializer,
+        responses={200: AgendamentoOutputSerializer},
+    ),
+    partial_update=extend_schema(
+        request=AgendamentoInputSerializer,
+        responses={200: AgendamentoOutputSerializer},
+    ),
+)
 class AgendamentoViewSet(ModelViewSet):
-    serializer_class = AgendamentoInputSerializer
     queryset = Agendamento.objects.all()  # type: ignore
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsRecepcionista]
+    permission_classes = [IsClinico | IsRecepcionista]
 
     @override
+    @extend_schema(request=AgendamentoInputSerializer)
     def create(self, request, *args, **kwargs):
         serializer = AgendamentoInputSerializer(data=request.data)
 
@@ -119,3 +140,9 @@ class AgendamentoViewSet(ModelViewSet):
             status=status.HTTP_201_CREATED,
             data=AgendamentoOutputSerializer(agendamento).data,  # type: ignore
         )
+
+    def get_serializer_class(self):  # type: ignore
+        if self.action in ["create", "update", "partial_update"]:
+            return AgendamentoInputSerializer
+
+        return AgendamentoOutputSerializer

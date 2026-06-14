@@ -2,6 +2,7 @@ from typing import override
 
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from apps.agenda.models.expediente import Expediente
 from apps.agenda.serializers.expediente_serializer import (
@@ -9,11 +10,15 @@ from apps.agenda.serializers.expediente_serializer import (
     ExpedienteOutputSerializer,
 )
 from apps.common.helpers import api_response
+from apps.common.permissions import IsClinicaAdmin, IsRecepcionista
 
 
 class ExpedienteViewSet(ModelViewSet):
     queryset = Expediente.objects.all()  # type: ignore
     serializer_class = ExpedienteOutputSerializer
+
+    permission_classes = [IsClinicaAdmin | IsRecepcionista]
+    authentication_classes = [JWTAuthentication]
 
     @override
     def create(self, request, *args, **kwargs):
