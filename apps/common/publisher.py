@@ -8,7 +8,7 @@ from apps.agenda.models.agendamento import Agendamento
 from apps.common import rabbitmq
 
 
-def publish_lembrete(agendamento_id: int):
+def publish_lembrete(agendamento: Agendamento):
     conn, channel = rabbitmq.get_channel()
 
     channel.queue_declare(rabbitmq.LEMBRETES_WHATSAPP_QUEUE, durable=True)
@@ -21,9 +21,7 @@ def publish_lembrete(agendamento_id: int):
         },
     )
 
-    agendamento = Agendamento.objects.get(pk=agendamento_id)  # type: ignore
-
-    inicio = agendamento.inicio - timedelta(hours=24)
+    inicio = agendamento.inicio - timedelta(hours=24)  # type: ignore
     agora = timezone.now()
     delay = int((inicio - agora).total_seconds() * 1000)
 
@@ -40,7 +38,11 @@ def publish_lembrete(agendamento_id: int):
         exchange="",
         routing_key=routing_key,
         body=json.dumps(
-            {"tipo": "lembrete_whatsapp", "agendamento_id": agendamento_id}
+            {
+                "tipo": "lembrete_whatsapp",
+                "agendamento_id": agendamento.id,
+                "agendamento_inicio": agendamento.inicio.isoformat(),
+            }
         ),
         properties=properties,
     )

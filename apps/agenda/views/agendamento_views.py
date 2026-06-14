@@ -112,7 +112,7 @@ class AgendamentoViewSet(ModelViewSet):
         )
         agendamento.save()
 
-        publisher.publish_lembrete(agendamento_id=agendamento.id)  # type: ignore
+        publisher.publish_lembrete(agendamento=agendamento)  # type: ignore
 
         return api_response(
             success=True,

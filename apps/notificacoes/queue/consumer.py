@@ -5,6 +5,7 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pika.amqp_object import Properties
 from pika.spec import Basic
 
+from apps.agenda.enums import Status
 from apps.agenda.models.agendamento import Agendamento
 from apps.common import rabbitmq
 from apps.notificacoes.models import WhatsAppInstance
@@ -24,6 +25,16 @@ def consume_queue(
         wpp_service = WhatsappService()
         agendamento = Agendamento.objects.get(pk=payload["agendamento_id"])  # type: ignore
 
+        if agendamento.status == Status.CANCELADO:
+            print("Agendamento cancelado. Lembrete descartado.")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return
+
+        if agendamento.inicio.isoformat() != payload.get("agendamento_inicio"):
+            print("Agendamento remarcado. Lembrete antigo descartado.")
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return
+
         instancia = WhatsAppInstance.objects.filter(  # type: ignore
             clinica=agendamento.paciente.clinica
         ).first()
@@ -36,8 +47,10 @@ def consume_queue(
         wpp_service.enviar_mensagem(
             instancia,
             telefone=agendamento.paciente.telefone,
-            mensagem=f"Você tem uma consulta ({agendamento.procedimento}) amanhã às {str(agendamento.inicio.time()).split('.')[0][:-3]}.",
+            mensagem=f"Você tem uma consulta ({agendamento.procedimento}) com o/a clínico(a) {agendamento.clinico} amanhã às {str(agendamento.inicio.time()).split('.')[0][:-3]}.",
         )
+
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
         print("Mensagem enviada ao número " + agendamento.paciente.telefone)
     except Exception as e:
@@ -59,7 +72,7 @@ def start_consumer():
     )
 
     channel.basic_consume(
-        queue=rabbitmq.LEMBRETES_WHATSAPP_QUEUE_DELAY,
+        queue=rabbitmq.LEMBRETES_WHATSAPP_QUEUE,
         on_message_callback=consume_queue,
         auto_ack=False,
     )
