@@ -37,6 +37,14 @@ class PacienteViewSet(ModelViewSet):
     permission_classes = [IsAppAdmin | IsRecepcionista | IsClinicaAdmin]
     authentication_classes = [JWTAuthentication]
 
+    def get_queryset(self):
+        user = self.request.user
+
+        if getattr(user, "clinica_id", None):
+            return Paciente.objects.filter(clinica_id=user.clinica_id)  # type: ignore
+
+        return Paciente.objects.all()
+
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
             return PacienteInputSerializer

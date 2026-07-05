@@ -30,9 +30,18 @@ class ProcedimentoViewSet(ModelViewSet):
 
         procedimento = Procedimento(**serializer.validated_data)  # type: ignore
         procedimento.clinica = request.user.clinica
+        procedimento.save()
 
         return api_response(
             success=True,
             status=status.HTTP_201_CREATED,
-            data=serializer.data,  # type: ignore
+            data=ProcedimentoSerializer(procedimento).data,  # type: ignore
         )
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if getattr(user, "clinica_id", None):
+            return Procedimento.objects.filter(clinica_id=user.clinica_id)  # type: ignore
+
+        return Procedimento.objects.all()  # type: ignore

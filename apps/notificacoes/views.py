@@ -9,7 +9,8 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from apps.common.helpers import api_response
 from apps.common.permissions import IsRecepcionistaOuAdmin
 from apps.notificacoes.exceptions import (
-    InstanciaWhatsAppJaExiste,
+    EvolutionAPINaoConfigurada,
+    EvolutionAPIException,
     InstanciaWhatsAppNaoEncontrada,
 )
 from apps.notificacoes.models import WhatsAppInstance
@@ -37,17 +38,29 @@ def criar_instancia(request):
 
     try:
         instancia = wpp_service.criar_instancia(clinica)
-    except InstanciaWhatsAppJaExiste:
+    except EvolutionAPINaoConfigurada as exc:
         return api_response(
             success=False,
             message="Falha ao realizar operação.",
-            errors={"erro": "Instância de WhatsApp associada à clínica já existe."},
-            status=status.HTTP_409_CONFLICT,
+            errors={"erro": str(exc)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except EvolutionAPIException as exc:
+        return api_response(
+            success=False,
+            message="Falha ao realizar operação.",
+            errors={"erro": str(exc)},
+            status=status.HTTP_502_BAD_GATEWAY,
         )
 
     serializer = WhatsAppInstanceSerializer(instancia)
 
-    return api_response(success=True, data=serializer.data, status=status.HTTP_200_OK)  # type: ignore
+    return api_response(
+        success=True,
+        message="Instância de WhatsApp criada ou sincronizada com sucesso.",
+        data=serializer.data,
+        status=status.HTTP_200_OK,
+    )  # type: ignore
 
 
 @api_view(["GET"])
@@ -70,23 +83,67 @@ def conectar_instancia(request):
     instance = WhatsAppInstance.objects.filter(clinica=clinica).first()  # type: ignore
 
     if not instance:
-        return api_response(
-            success=False,
-            message="Falha ao realizar operação.",
-            errors={"erro": "Clínica não possui instância associada."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+        try:
+            instance = wpp_service.criar_instancia(clinica)
+        except EvolutionAPINaoConfigurada as exc:
+            return api_response(
+                success=False,
+                message="Falha ao realizar operação.",
+                errors={"erro": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except EvolutionAPIException as exc:
+            return api_response(
+                success=False,
+                message="Falha ao realizar operação.",
+                errors={"erro": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
     try:
         qr_code = wpp_service.get_conexao(instance)
     except InstanciaWhatsAppNaoEncontrada:
+        instance.delete()
+
+        try:
+            instance = wpp_service.criar_instancia(clinica)
+            qr_code = wpp_service.get_conexao(instance)
+        except InstanciaWhatsAppNaoEncontrada:
+            return api_response(
+                success=False,
+                errors={
+                    "erro": "Instância local estava inválida e a Evolution API ainda não encontrou a instância recriada. Tente gerar o QR Code novamente."
+                },
+                message="Falha ao realizar operação.",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except EvolutionAPINaoConfigurada as exc:
+            return api_response(
+                success=False,
+                message="Falha ao realizar operação.",
+                errors={"erro": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except EvolutionAPIException as exc:
+            return api_response(
+                success=False,
+                message="Falha ao realizar operação.",
+                errors={"erro": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+    except EvolutionAPINaoConfigurada as exc:
         return api_response(
             success=False,
-            errors={
-                "erro": "Instância de WhatsApp associada a clínica ainda não existe."
-            },
             message="Falha ao realizar operação.",
-            status=status.HTTP_404_NOT_FOUND,
+            errors={"erro": str(exc)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except EvolutionAPIException as exc:
+        return api_response(
+            success=False,
+            message="Falha ao realizar operação.",
+            errors={"erro": str(exc)},
+            status=status.HTTP_502_BAD_GATEWAY,
         )
 
     return api_response(
@@ -122,11 +179,34 @@ def enviar_mensagem(request):
 
     instance = WhatsAppInstance.objects.filter(clinica=clinica).first()  # type: ignore
 
+    if not instance:
+        return api_response(
+            success=False,
+            message="Falha ao realizar operação.",
+            errors={"erro": "Clínica não possui instância de WhatsApp associada."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     wpp_service = WhatsappService()
-    wpp_service.enviar_mensagem(
-        instance,
-        telefone=serializer.validated_data["telefone"],  # type: ignore
-        mensagem=serializer.validated_data["mensagem"],  # type: ignore
-    )
+    try:
+        wpp_service.enviar_mensagem(
+            instance,
+            telefone=serializer.validated_data["telefone"],  # type: ignore
+            mensagem=serializer.validated_data["mensagem"],  # type: ignore
+        )
+    except EvolutionAPINaoConfigurada as exc:
+        return api_response(
+            success=False,
+            message="Falha ao realizar operação.",
+            errors={"erro": str(exc)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except EvolutionAPIException as exc:
+        return api_response(
+            success=False,
+            message="Falha ao realizar operação.",
+            errors={"erro": str(exc)},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
 
     return api_response(success=True, status=status.HTTP_200_OK)

@@ -7,7 +7,8 @@ from apps.agenda.models.procedimento import Procedimento
 class ProcedimentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Procedimento
-        fields = ["nome", "valor", "duracao", "ativo"]
+        fields = ["id", "nome", "valor", "duracao", "ativo"]
+        read_only_fields = ["id"]
 
     def validate_valor(self, data):
         if data <= 0:

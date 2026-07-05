@@ -6,7 +6,9 @@ from dotenv import load_dotenv
 from rest_framework import status
 
 from apps.notificacoes.exceptions import (
-    InstanciaWhatsAppJaExiste,
+    EvolutionAPINaoConfigurada,
+    EvolutionAPIException,
+    EvolutionAPIRespostaInvalida,
     InstanciaWhatsAppNaoEncontrada,
 )
 from apps.notificacoes.models import WhatsAppInstance
@@ -15,30 +17,51 @@ load_dotenv()
 
 
 class WhatsappService:
-    api = os.getenv("EVOLUTION_API_URL")
-    api_key = os.getenv("EVOLUTION_API_KEY")
+    def __init__(self):
+        self.api = (os.getenv("EVOLUTION_API_URL") or "").rstrip("/")
+        self.api_key = os.getenv("EVOLUTION_API_KEY") or ""
 
     def criar_instancia(self, clinica) -> WhatsAppInstance:
-        response = requests.post(
-            f"{self.api}/instance/create/",
+        self.__validar_configuracao()
+        instance_name = self.__normalizar_nome(clinica.nome)
+        response = self.__post(
+            "/instance/create",
             json={
-                "instanceName": self.__normalizar_nome(clinica.nome),
+                "instanceName": instance_name,
                 "integration": "WHATSAPP-BAILEYS",
                 "number": clinica.telefone,
             },
-            headers={"apiKey": self.api_key},  # type: ignore
-            timeout=10,
         )
 
-        if response.status_code == status.HTTP_403_FORBIDDEN:
-            raise InstanciaWhatsAppJaExiste("Instância com esse nome já existe.")
+        if response.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_409_CONFLICT]:
+            return self.__salvar_instancia_existente(clinica, instance_name)
 
-        instance_data = response.json().get("instance")
+        if not response.ok:
+            raise EvolutionAPIException(self.__erro_response(response))
 
-        instance = WhatsAppInstance.objects.create(  # type: ignore
-            nome=instance_data.get("instanceName"),
-            instancia_id=instance_data.get("instanceId"),
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise EvolutionAPIRespostaInvalida(
+                "Evolution API não retornou os dados da instância criada."
+            ) from exc
+
+        if not isinstance(body, dict):
+            raise EvolutionAPIRespostaInvalida(
+                "Evolution API retornou os dados da instância em formato inválido."
+            )
+
+        instance_data = body.get("instance") or {}
+        instance_name = instance_data.get("instanceName") or instance_name
+        instance_id = instance_data.get("instanceId") or instance_data.get("id") or ""
+
+        instance, _ = WhatsAppInstance.objects.update_or_create(  # type: ignore
             clinica=clinica,
+            defaults={
+                "nome": instance_name,
+                "instancia_id": instance_id,
+                "ativo": True,
+            },
         )
 
         return instance
@@ -46,27 +69,115 @@ class WhatsappService:
     def get_conexao(self, instance) -> str:
         """Retorna uma string codificada em base64
         representando a imagem do QR Code para conexão"""
-        response = requests.get(
-            f"{self.api}/instance/connect/{instance.nome}",
-            headers={"apiKey": self.api_key},  # type: ignore
-            timeout=10,
-        )
+        self.__validar_configuracao()
+        response = self.__get(f"/instance/connect/{instance.nome}")
 
-        if response.status_code == 404:
+        if response.status_code == status.HTTP_404_NOT_FOUND:
             raise InstanciaWhatsAppNaoEncontrada("Instância não foi encontrada.")
 
-        body = response.json()
-        return body.get("base64")
+        if not response.ok:
+            raise EvolutionAPIException(self.__erro_response(response))
+
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise EvolutionAPIRespostaInvalida(
+                "Evolution API não retornou uma resposta JSON válida para conexão."
+            ) from exc
+
+        if not isinstance(body, dict):
+            raise EvolutionAPIRespostaInvalida(
+                "Evolution API retornou o QR Code em formato inválido."
+            )
+        qr_code = body.get("base64") or body.get("qrcode") or body.get("qr")
+
+        if not qr_code:
+            raise EvolutionAPIRespostaInvalida(
+                "Evolution API não retornou um QR Code em base64."
+            )
+
+        return self.__normalizar_qr_code(qr_code)
 
     def enviar_mensagem(self, instance, telefone: str, mensagem: str):
-        response = requests.post(
-            f"{self.api}/message/sendText/{instance.nome}",
+        self.__validar_configuracao()
+        response = self.__post(
+            f"/message/sendText/{instance.nome}",
             json={"number": telefone, "text": mensagem},
-            headers={"apiKey": self.api_key},  # type: ignore
-            timeout=10,
         )
 
-        response.raise_for_status()
+        if not response.ok:
+            raise EvolutionAPIException(self.__erro_response(response))
+
+    def __salvar_instancia_existente(self, clinica, instance_name: str):
+        instance, _ = WhatsAppInstance.objects.update_or_create(  # type: ignore
+            clinica=clinica,
+            defaults={
+                "nome": instance_name,
+                "instancia_id": instance_name,
+                "ativo": True,
+            },
+        )
+
+        return instance
+
+    def __get(self, path: str):
+        try:
+            return requests.get(
+                f"{self.api}{path}",
+                headers={"apiKey": self.api_key},
+                timeout=10,
+            )
+        except requests.RequestException as exc:
+            raise EvolutionAPIException(
+                "Não foi possível conectar à Evolution API."
+            ) from exc
+
+    def __post(self, path: str, *, json: dict | None = None):
+        try:
+            return requests.post(
+                f"{self.api}{path}",
+                json=json,
+                headers={"apiKey": self.api_key},
+                timeout=10,
+            )
+        except requests.RequestException as exc:
+            raise EvolutionAPIException(
+                "Não foi possível conectar à Evolution API."
+            ) from exc
+
+    def __validar_configuracao(self):
+        if not self.api or not self.api_key:
+            raise EvolutionAPINaoConfigurada(
+                "EVOLUTION_API_URL e EVOLUTION_API_KEY devem estar configuradas no .env."
+            )
+
+    def __erro_response(self, response):
+        try:
+            body = response.json()
+        except ValueError:
+            return response.text or "Evolution API retornou uma resposta inválida."
+
+        if isinstance(body, dict):
+            for key in ["message", "error"]:
+                value = body.get(key)
+                if isinstance(value, str):
+                    return value
+
+            nested_response = body.get("response")
+            if isinstance(nested_response, dict):
+                nested_message = nested_response.get("message")
+                if isinstance(nested_message, str):
+                    return nested_message
+
+        return "Evolution API recusou a operação."
+
+    def __normalizar_qr_code(self, qr_code: str):
+        qr_code = qr_code.strip()
+
+        if qr_code.startswith("data:image"):
+            return qr_code
+
+        return f"data:image/png;base64,{qr_code}"
 
     def __normalizar_nome(self, nome: str) -> str:
         nome = "".join(  # removendo acentos

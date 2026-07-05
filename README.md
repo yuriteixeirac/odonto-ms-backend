@@ -155,6 +155,39 @@ Para rodar os testes:
 python manage.py test
 ```
 
+## Dados mock
+
+Para popular o banco local com dados de teste para todas as telas do frontend:
+
+```bash
+python manage.py seedmockdata
+```
+
+Para limpar e recriar apenas os dados mock:
+
+```bash
+python manage.py seedmockdata --reset
+```
+
+Senha padrão dos usuários criados:
+
+```txt
+mock12345
+```
+
+Usuários principais:
+
+```txt
+app.admin@odontoms.local
+admin.centro@odontoms.local
+recepcao.centro@odontoms.local
+ana.clinico@odontoms.local
+bruno.clinico@odontoms.local
+admin.norte@odontoms.local
+recepcao.norte@odontoms.local
+diego.clinico@odontoms.local
+```
+
 ## Próximos passos
 
 * Implementar frontend web;

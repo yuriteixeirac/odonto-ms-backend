@@ -11,7 +11,7 @@ from apps.agenda.models.expediente import Expediente
 class ExpedienteInputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expediente
-        fields = ["inicio", "fim", "ativo", "dia", "clinico"]
+        fields = ["id", "inicio", "fim", "ativo", "dia", "clinico"]
 
     @override
     def validate(self, attrs):

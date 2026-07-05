@@ -43,6 +43,17 @@ class AgendamentoViewSet(ModelViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsClinico | IsRecepcionista]
 
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.cargo == Cargo.CLINICO:
+            return Agendamento.objects.filter(clinico=user)  # type: ignore
+
+        if getattr(user, "clinica_id", None):
+            return Agendamento.objects.filter(clinico__clinica_id=user.clinica_id)  # type: ignore
+
+        return Agendamento.objects.all()  # type: ignore
+
     @override
     @extend_schema(request=AgendamentoInputSerializer)
     def create(self, request, *args, **kwargs):

@@ -38,3 +38,12 @@ class IsAppAdmin(BasePermission):
             and request.user.clinica_id is None
             and request.user.is_staff
         )
+
+
+class IsRecepcionistaOuAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and request.user.cargo in [Cargo.RECEPCIONISTA, Cargo.ADMIN]
+        )

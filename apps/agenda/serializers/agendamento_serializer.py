@@ -35,6 +35,7 @@ class AgendamentoOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Agendamento
         fields = [
+            "id",
             "inicio",
             "fim",
             "status",

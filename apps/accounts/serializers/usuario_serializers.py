@@ -21,4 +21,4 @@ class UsuarioInputSerializer(serializers.ModelSerializer):
 class UsuarioOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ["email", "nome", "sobrenome", "telefone"]
+        fields = ["id", "email", "nome", "sobrenome", "telefone", "cargo", "clinica"]
